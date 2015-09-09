@@ -15,7 +15,12 @@ int main()
 
 	test = getNextData(file);
 
+
 	printf("%i\n",test);
+
+	test = getNextData(file);
+
+		printf("%i\n",test);
 
 	return 0;
 }
