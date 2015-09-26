@@ -11,4 +11,14 @@ int getNextData(FILE *a)
 	fscanf(a,"%i",&value);
 
 	return value;
+
+}
+
+int isFileEnded(FILE *a){
+	if(feof(a)){
+		return 1;
+	}else{
+		return 0;
+	}
+
 }
