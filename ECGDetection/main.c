@@ -28,7 +28,7 @@ int RR_LOW = 0;
 int RR_HIGH = 0;
 int RR_MISS = 0;
 
-int RPEAKS[2000] = {0};
+int RPEAKS[200000] = {0};
 int currentRIndex = 0;
 
 int RECENTRR_OK[8] = {0};
@@ -44,7 +44,7 @@ int main()
 	clock_t  start, end;
 	double cpu_time_used;
 
-	static const char filename[] = "ECG.txt";
+	static const char filename[] = "ECG10800K.txt";
 
 	FILE *file = fopen(filename,"r");
 
@@ -52,14 +52,14 @@ int main()
 	int lowPassOut;
 	int highPassOut;
 	int deriveOut;
-	int squareOut;
-	int intSum;
-	int mWIOut;
+	unsigned long squareOut;
+	unsigned long intSum;
+	unsigned long mWIOut;
 
 	int oldRaw[12] = {0};
 	int oldLowOut[32] = {0};
 	int oldHighOut[4] = {0};
-	int oldSquareOut[30] = {0};
+	unsigned long oldSquareOut[30] = {0};
 
 	int OSO_index = 0 ;
 	int raw_index = 0 ;
@@ -82,14 +82,20 @@ int main()
 		squareOut = deriveOut * deriveOut;
 
 		//Moving Window Integrator
-
+		oldSquareOut[OSO_index] = squareOut;
+		if(OSO_index == 29){
+			OSO_index = 0;
+		}else{
+			OSO_index++;
+		}
+/*
 		for(int i = 29 ; i >= 1 ; i--){
 			oldSquareOut[i] = oldSquareOut[i - 1];
 		}
 		oldSquareOut[0] = squareOut;
-
+*/
 		intSum = 0;
-		for(int i = 29 ; i >= 1; i--){
+		for(int i = 29 ; i >= 0; i--){
 			intSum += oldSquareOut[i] / 30;
 		}
 		mWIOut = intSum;
@@ -117,6 +123,7 @@ int main()
 		//Moving to next line.
 		incoming = getNextData(file);
 
+
 		//printf("Index: %i MWIOUt: %i\n",index,mWIOut);
 		findPeaks(mWIOut);
 
@@ -127,7 +134,7 @@ int main()
 		cpu_time_used += 1000.0 * ((double) (end - start)) / CLOCKS_PER_SEC;
 
 	}
-	cpu_time_used = cpu_time_used / 10000;
+	cpu_time_used = cpu_time_used / 10800000;
 
 	printf("%f ms\n",cpu_time_used);
 
@@ -164,12 +171,11 @@ void findPeaks(int input){
 			findRPeaks(peakCheck[4]);
 
 	}
-
 }
 
 void findRPeaks(int peak){
-	static int PEAKS[2000] = {0};
-	static int INDEXES[2000] = {0};
+	static int PEAKS[200000] = {0};
+	static int INDEXES[200000] = {0};
 	static int PEAKINDEX = 0;
 
 
@@ -183,8 +189,8 @@ void findRPeaks(int peak){
 		RR = (index - 4) - olderIndex;
 
 		if(RR < RR_HIGH){
-			(RR > RR_LOW){
-		}
+			if(RR > RR_LOW){
+
 				correctInterval(peak);
 
 				olderIndex = index - 4;
@@ -195,21 +201,22 @@ void findRPeaks(int peak){
 				//printf("Index: %i - - - - Peak: %i - - - - MISS: %i - - - - RR: %i\n", index - 4, peak,RR_MISS,RR);
 				//printf("%i\n",index - 4);
 				RR_ERROR = 0;
-		}else{
-			RR_ERROR++;
+			}else{
+				RR_ERROR++;
 
-			if(RR_ERROR >= 5){
-				printf("Warning: Uneven beats!\n\n");
+				if(RR_ERROR >= 5){
+					printf("Warning: Uneven beats!\n\n");
+				}
+
 			}
-
-		}
-
-		if(RR > RR_MISS){
+		}else if(RR > RR_MISS){
 
 			int tempIndex = PEAKINDEX -2;
 
 			while(tempIndex >= 0 ){
-				if(*(PEAKS + tempIndex) > THRESHOLD2){
+
+				if(PEAKS[tempIndex] > THRESHOLD2){
+
 					int tempPeak = PEAKS[tempIndex];
 					int tempPeakIndex = INDEXES[tempIndex];
 					tempIndex = -1;
@@ -303,7 +310,7 @@ void searchBack(int peak2){
 	for(int i = 7 ; i >= 0 ; i--){
 		RR_AVERAGE1 += *(RECENTRR + i)/8;
 	}
-	RR_AVERAGE1 = RR_AVERAGE1 / 8;
+	//RR_AVERAGE1 = RR_AVERAGE1 / 8;
 
 	RR_LOW = RR_AVERAGE1 * 92 / 100;
 	RR_HIGH = RR_AVERAGE1 * 116 / 100;
@@ -319,14 +326,12 @@ void dataOutput(int peak, int RR, int place){
 	float pulse = 15000.0 / RR;
 
 	if(peak < 2000){
-		printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes. %i\n"
-					"Warning: Beat to low!\n\n", peak, time, pulse,place );
+		printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes. %i RR: %i LOW: %i High:%i MISS:%i\n"
+					"Warning: Beat to low!\n\n", peak, time, pulse,place ,RR,RR_LOW,RR_HIGH,RR_MISS);
+	}else{
+		printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes. %i RR: %i LOW: %i High:%i MISS:%i\n"
+					"\n", peak, time, pulse, place ,RR,RR_LOW,RR_HIGH,RR_MISS);
 	}
-
-
-	printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes. %i\n"
-					"\n", peak, time, pulse, place );
-
 
 
 }
