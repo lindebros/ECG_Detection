@@ -2,6 +2,10 @@
 #include"sensor.h"
 #include<time.h>
 
+void lowPassFilter(int input);
+void highPassFilter();
+void deriveOutAndSquaring();
+void movingWindowIntegration();
 void findPeaks(int input);
 
 void findRPeaks(int peak);
@@ -28,7 +32,7 @@ int RR_LOW = 0;
 int RR_HIGH = 0;
 int RR_MISS = 0;
 
-int RPEAKS[200000] = {0};
+int RPEAKS[2000000] = {0};
 int currentRIndex = 0;
 
 int RECENTRR_OK[8] = {0};
@@ -39,16 +43,7 @@ int RR_AVERAGE2;
 
 int RR_ERROR = 0;
 
-int main()
-{
-	clock_t  start, end;
-	double cpu_time_used;
-
-	static const char filename[] = "ECG10800K.txt";
-
-	FILE *file = fopen(filename,"r");
-
-	int incoming;
+int incoming;
 	int lowPassOut;
 	int highPassOut;
 	int deriveOut;
@@ -64,30 +59,41 @@ int main()
 	int OSO_index = 0 ;
 	int raw_index = 0 ;
 
+int main()
+{
+	for(int i = 0 ; i < 100 ; i++){
+
+
+	clock_t  start, end,start_total,end_total;
+	double cpu_time_used, max_time_used,time_used,total_time;
+	int max_int;
+
+	static const char filename[] = "ECG.txt";
+
+	FILE *file = fopen(filename,"r");
 
 	incoming = getNextData(file);
 
+	cpu_time_used = 0.0;
+
+
+	start_total = clock();
+
 	while(!isFileEnded(file)){
+		time_used = 0;
 		start = clock();
 		//Low - Pass Filter
-		lowPassOut = ( 2 * oldLowOut[0] ) - oldLowOut[1] + (incoming - ( 2 * oldRaw[5] ) + oldRaw[11]) / 32;
+		lowPassFilter(incoming);
 
 		//High - Pass Filter
-		highPassOut = oldHighOut[0] - ( lowPassOut / 32 ) + oldLowOut[15] - oldLowOut[16] + ( oldLowOut[31] / 32 );
+		highPassFilter();
 
 		//Derivative Filter
-		deriveOut = (2 * highPassOut + oldHighOut[0] - oldHighOut[2] - 2 * oldHighOut[3]) / 8;
-
-		//Squaring Filter
-		squareOut = deriveOut * deriveOut;
+		deriveOutAndSquaring();
 
 		//Moving Window Integrator
-		oldSquareOut[OSO_index] = squareOut;
-		if(OSO_index == 29){
-			OSO_index = 0;
-		}else{
-			OSO_index++;
-		}
+		movingWindowIntegration();
+
 /*
 		for(int i = 29 ; i >= 1 ; i--){
 			oldSquareOut[i] = oldSquareOut[i - 1];
@@ -131,14 +137,51 @@ int main()
 
 		index ++;
 
-		cpu_time_used += 1000.0 * ((double) (end - start)) / CLOCKS_PER_SEC;
+		time_used = 1000.0 * ((double) (end - start)) / CLOCKS_PER_SEC;
+		cpu_time_used += time_used;
+
+		if(time_used > max_time_used){
+			max_time_used = time_used;
+			max_int = index;
+		}
+
 
 	}
-	cpu_time_used = cpu_time_used / 10800000;
+	end_total = clock();
+	total_time =  1000.0 * ((double) (end_total - start_total)) / CLOCKS_PER_SEC;
+	cpu_time_used = cpu_time_used / 10000;
 
-	printf("%f ms\n",cpu_time_used);
+	printf("Total: %f ms\n"
+			"Filters: Maximum: %f ms (%i) ; Average: %i ms\n"
+			"",total_time,max_time_used,max_int,cpu_time_used);
+	}
 
 	return 0;
+}
+
+void lowPassFilter(int input){
+	lowPassOut = ( 2 * oldLowOut[0] ) - oldLowOut[1] + (input - ( 2 * oldRaw[5] ) + oldRaw[11]) / 32;
+}
+
+void highPassFilter(){
+	highPassOut = oldHighOut[0] - ( lowPassOut / 32 ) + oldLowOut[15] - oldLowOut[16] + ( oldLowOut[31] / 32 );
+}
+
+void deriveOutAndSquaring(){
+
+	deriveOut = (2 * highPassOut + oldHighOut[0] - oldHighOut[2] - 2 * oldHighOut[3]) / 8;
+
+	//Squaring Filter
+	squareOut = deriveOut * deriveOut;
+}
+
+void movingWindowIntegration(){
+	oldSquareOut[OSO_index] = squareOut;
+			if(OSO_index == 29){
+				OSO_index = 0;
+			}else{
+				OSO_index++;
+			}
 }
 
 void findPeaks(int input){
@@ -174,8 +217,8 @@ void findPeaks(int input){
 }
 
 void findRPeaks(int peak){
-	static int PEAKS[200000] = {0};
-	static int INDEXES[200000] = {0};
+	static int PEAKS[2000000] = {0};
+	static int INDEXES[2000000] = {0};
 	static int PEAKINDEX = 0;
 
 
