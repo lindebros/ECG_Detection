@@ -3,7 +3,8 @@
 #include<time.h>
 /* ECG-scanning
  * Mathias Linde s144468
- * Anders H
+ * Anders Hein s144436
+ * Peter Fischer s140436
  */
 
 /* The lines of code that was used
