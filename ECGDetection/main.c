@@ -2,6 +2,10 @@
 #include"sensor.h"
 #include<time.h>
 
+/* The lines of code that was used
+ * to analize runtime has been commented out.
+ */
+
 void lowPassFilter(int input);
 void highPassFilter();
 void deriveOutAndSquaring();
@@ -32,7 +36,7 @@ int RR_LOW = 0;
 int RR_HIGH = 0;
 int RR_MISS = 0;
 
-int RPEAKS[2000000] = {0};
+int RPEAKS[450000] = {0};
 int currentRIndex = 0;
 
 int RECENTRR_OK[8] = {0};
@@ -65,16 +69,15 @@ int MWI_DIVISOR;
 
 int main()
 {
-
-
-	//for( int i = 0 ; i < 100 ; i++){
-
+	/* USED FOR ANALISIS OF PROGRAMS RUNTIME
 		clock_t  start, end,start_total,end_total,start_low,end_low,start_high,end_high,start_deriveSquare,end_deriveSquare,start_MWI,end_MWI,
 					start_peak,end_peak;
 				double cpu_time_used, max_time_used,time_used,total_time,total_time_max,low_time_used,low_time_max,high_time_used,high_time_max,derive_time,derive_time_max,
 				mwi_time,mwi_time_max,peak_time,peak_time_max;
 				int fileSize;
+				*/
 
+	// Setting starting value.
 	RR_AVERAGE1 = 151;
 	RR_AVERAGE2 = 151;
 	RR_LOW = RR_AVERAGE2 / 92 * 100;
@@ -87,10 +90,9 @@ int main()
 	SPKF = 4200;
 	NPKF = 200;
 
-
-
-
-	fileSize = 10000;
+	// USED FOR ANALISIS OF PROGRAM RUNTIME
+	//fileSize = 10000;
+	//cpu_time_used = 0.0;
 
 	static const char filename[] = "ECG.txt";
 
@@ -98,63 +100,71 @@ int main()
 
 	incoming = getNextData(file);
 
-	cpu_time_used = 0.0;
-
 	MWI_DIVISOR = 0;
 
-	start_total = clock();
+	// USED FOR ANALISIS OF PROGRAM RUNTIME
+	//start_total = clock();
 
 	while(!isFileEnded(file)){
-		time_used = 0;
-		start = clock();
-		//Low - Pass Filter
-		start_low = clock();
-		lowPassFilter(incoming);
-		end_low = clock();
 
+			//time_used = 0;
+			//start = clock();
+		//Low - Pass Filter
+			//start_low = clock();
+		lowPassFilter(incoming);
+			//end_low = clock();
+
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		if(1000.0 * ((double) end_low - start_low) / CLOCKS_PER_SEC > low_time_max){
 			low_time_max = 1000.0 * ((double) end_low - start_low) / CLOCKS_PER_SEC;
 			low_time_used += 1000.0 * ((double) end_low - start_low) / CLOCKS_PER_SEC;
 		}else{
 			low_time_used += 1000.0 * ((double) end_low - start_low) / CLOCKS_PER_SEC;
 		}
+		*/
 
 		//High - Pass Filter
-		start_high = clock();
+			//start_high = clock();
 		highPassFilter();
-		end_high = clock();
-
+			//end_high = clock();
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		if(1000.0 * ((double) end_high - start_high) / CLOCKS_PER_SEC > high_time_max){
 			high_time_max = 1000.0 * ((double) end_high - start_high) / CLOCKS_PER_SEC;
 			high_time_used +=1000.0 * ((double) end_high - start_high) / CLOCKS_PER_SEC;
 		}else{
 			high_time_used +=1000.0 * ((double) end_high - start_high) / CLOCKS_PER_SEC;
 		}
+		*/
 
 		//Derivative Filter
-		start_deriveSquare = clock();
+			//start_deriveSquare = clock();
 		deriveOutAndSquaring();
-		end_deriveSquare = clock();
+			//end_deriveSquare = clock();
 
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		if(1000.0 * ((double) end_deriveSquare - start_deriveSquare) / CLOCKS_PER_SEC > derive_time_max){
 			derive_time_max = 1000.0 * ((double) end_deriveSquare - start_deriveSquare) / CLOCKS_PER_SEC;
 			derive_time += 1000.0 * ((double) end_deriveSquare - start_deriveSquare) / CLOCKS_PER_SEC;
 		}else{
 			derive_time += 1000.0 * ((double) end_deriveSquare - start_deriveSquare) / CLOCKS_PER_SEC;
 		}
+		*/
 
-		//Moving Window Integrator
-		start_MWI = clock();
+		//Moving Window Integrator - moving the list.
+			//start_MWI = clock();
 		movingWindowIntegration();
-		end_MWI = clock();
+			//end_MWI = clock();
 
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		if(1000.0 * ((double) end_MWI - start_MWI) / CLOCKS_PER_SEC > mwi_time_max){
 			mwi_time_max = 1000.0 * ((double) end_MWI - start_MWI) / CLOCKS_PER_SEC;
 			mwi_time += 1000.0 * ((double) end_MWI - start_MWI) / CLOCKS_PER_SEC;
 		}else{
 			mwi_time += 1000.0 * ((double) end_MWI - start_MWI) / CLOCKS_PER_SEC;
 		}
+		 */
 
+		//Moving Window Integrator - calculating
 		intSum = 0;
 		for(int i = 29 ; i >= 0; i--){
 			intSum += oldSquareOut[i];
@@ -179,40 +189,41 @@ int main()
 		oldLowOut[0] = lowPassOut;
 		oldHighOut[0] = highPassOut;
 
-		end = clock();
+			//end = clock();
 
 		//Moving to next line.
 		incoming = getNextData(file);
 
-		printf("%i\n",mWIOut);
-		start_peak = clock();
+			//start_peak = clock();
 		findPeaks(mWIOut);
-		end_peak = clock();
+			//end_peak = clock();
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		if(1000.0 * ((double) end_peak - start_peak) / CLOCKS_PER_SEC > peak_time_max){
 			peak_time_max = 1000.0 * ((double) end_peak - start_peak) / CLOCKS_PER_SEC;
 			peak_time += 1000.0 * ((double) end_peak - start_peak) / CLOCKS_PER_SEC;
 		}else{
 			peak_time += 1000.0 * ((double) end_peak - start_peak) / CLOCKS_PER_SEC;
 		}
-
+		 */
 
 		index ++;
 
+		/* USED FOR ANALISIS OF PROGRAM RUNTIME
 		time_used = 1000.0 * ((double) (end - start)) / CLOCKS_PER_SEC;
 		cpu_time_used += time_used;
 
 		if(time_used > max_time_used){
 			max_time_used = time_used;
 		}
-
+		 */
 
 	}
+
+	/* USED FOR ANALISIS OF PROGRAM RUNTIME
 	end_total = clock();
 	if((1000.0 * ((double) (end_total - start_total)) / CLOCKS_PER_SEC) > total_time_max){
 		total_time_max = 1000.0 * ((double) (end_total - start_total)) / CLOCKS_PER_SEC;
 		total_time += (1000.0 * ((double) (end_total - start_total)) / CLOCKS_PER_SEC) /100;
-	}else{
-
 	}
 
 	cpu_time_used = cpu_time_used / fileSize;
@@ -222,8 +233,9 @@ int main()
 	derive_time = derive_time / fileSize;
 	mwi_time = mwi_time / fileSize;
 	peak_time = peak_time / fileSize;
+	*/
 
-/*
+/* USED TO FOR ANALASIS OF PROGRAMS RUNTIME
 	printf("Total: %.4f ms ; Average: %.4f ms\n"
 			"Filters: Maximum: %.4f ms ; Average: %.4f ms\n"
 			"	Low: Maximum: %.4f ms ; Average: %.4f ms \n"
@@ -233,20 +245,21 @@ int main()
 			"Peaks: Maximum: %.4f ms ; Average: %.4f ms\n",total_time_max, total_time,max_time_used,cpu_time_used,
 			low_time_max,low_time_used,high_time_max,high_time_used,derive_time_max,derive_time,
 			mwi_time_max,mwi_time,peak_time_max,peak_time);
-
-	}
 */
 	return 0;
 }
 
+//Calculation of low pass filter
 void lowPassFilter(int input){
 	lowPassOut = ( 2 * oldLowOut[0] ) - oldLowOut[1] + (input - ( 2 * oldRaw[5] ) + oldRaw[11]) / 32;
 }
 
+//calculation of high pass filter
 void highPassFilter(){
 	highPassOut = oldHighOut[0] - ( lowPassOut / 32 ) + oldLowOut[15] - oldLowOut[16] + ( oldLowOut[31] / 32 );
 }
 
+// calculation for derative and squaring filters.
 void deriveOutAndSquaring(){
 
 	deriveOut = (2 * highPassOut + oldHighOut[0] - oldHighOut[2] - 2 * oldHighOut[3]) / 8;
@@ -255,6 +268,7 @@ void deriveOutAndSquaring(){
 	squareOut = deriveOut * deriveOut;
 }
 
+// moving array for moving window integration.
 void movingWindowIntegration(){
 	oldSquareOut[OSO_index] = squareOut;
 			if(OSO_index == 29){
@@ -266,7 +280,8 @@ void movingWindowIntegration(){
 				MWI_DIVISOR++;
 			}
 }
-
+/* Finding peaks, testing for largest value against 9 values on either side of candidate.
+ */
 void findPeaks( int input){
 
 	static  int peakCheck[19] = {0};
@@ -300,9 +315,10 @@ void findPeaks( int input){
 
 }
 
+// testing a RPeak candidate for potential.
 void findRPeaks( int peak){
-	static int PEAKS[2000000] = {0};
-	static int INDEXES[2000000] = {0};
+	static int PEAKS[450000] = {0};
+	static int INDEXES[450000] = {0};
 	static int PEAKINDEX = 0;
 
 
@@ -310,34 +326,28 @@ void findRPeaks( int peak){
 	INDEXES[PEAKINDEX] = index - 4;
 	PEAKINDEX++;
 
+	// Smaller than THRESHOLD1 ?
 	if(peak <= THRESHOLD1){
 		notRPeak(peak);
 	}else{
+
+		//Calculate RR
 		RR = (index - 4) - olderIndex;
 
-		if(RR < RR_HIGH){
-			if(RR > RR_LOW){
+		// Is RR between RR_LOW and RR_HIGH ?
+		if(RR < RR_HIGH && RR > RR_LOW){
 
-				correctInterval(peak);
+			correctInterval(peak);
+			olderIndex = index - 4;
+			RPEAKS[currentRIndex] = peak;
+			currentRIndex++;
+			dataOutput(peak, RR,index - 4);
+			RR_ERROR = 0;
+		}else if(RR > RR_MISS){// is RR higher than RR_MISS?
 
-				olderIndex = index - 4;
-
-				RPEAKS[currentRIndex] = peak;
-				currentRIndex++;
-				dataOutput(peak, RR,index - 4);
-				RR_ERROR = 0;
-			}else{
-				RR_ERROR++;
-
-				if(RR_ERROR >= 5){
-					//printf("Warning: Uneven beats!\n\n");
-				}
-
-			}
-		}
-
-		if(RR > RR_MISS){
-
+			/* Running a while loop that runs from the peak before the current peak, and returns the first
+			 * peak that exceeds THRESHOLD2
+			 */
 			int tempIndex = PEAKINDEX -2;
 
 			while(tempIndex >= 0 ){
@@ -352,6 +362,7 @@ void findRPeaks( int peak){
 					RPEAKS[currentRIndex] = tempPeak;
 					currentRIndex++;
 
+					//Larger calculations has their own function.
 					searchBack(tempPeak);
 
 					olderIndex = tempPeakIndex;
@@ -368,6 +379,7 @@ void findRPeaks( int peak){
 
 }
 
+//Calculations if peak was not rpeak
 void notRPeak( int peak){
 
 	NPKF = (peak / 8) + (NPKF * 7 / 8);
@@ -375,10 +387,11 @@ void notRPeak( int peak){
 	THRESHOLD2 = THRESHOLD1 / 2;
 
 	if((index - 4) - olderIndex >= 500){
-	//	printf("WARNING: Heart failure!\n\n");
+		printf("WARNING: Heart failure!\n\n");
 	}
 }
 
+//calculations if peak was rpeak with right RR-interval
 void correctInterval( int peak){
 	RPEAKS[currentRIndex] = peak;
 	currentRIndex++ ;
@@ -386,10 +399,8 @@ void correctInterval( int peak){
 	SPKF = (peak / 8) + (SPKF * 7 / 8);
 
 	moveRecentRROk();
-	*(RECENTRR_OK) = RR;
 
 	moveRecentRR();
-	*(RECENTRR) = RR;
 
 	calculateAverage();
 
@@ -402,6 +413,7 @@ void correctInterval( int peak){
 
 }
 
+//Moving older RR-intervals
 void moveRecentRROk(){
 
 	for(int i = 7 ; i > 0 ; i--){
@@ -410,6 +422,7 @@ void moveRecentRROk(){
 	if(AVERAGE2_DIVISOR != 8){
 		AVERAGE2_DIVISOR++;
 	}
+	RECENTRR_OK[0] = RR;
 }
 
 void moveRecentRR(){
@@ -419,8 +432,10 @@ void moveRecentRR(){
 	if(AVERAGE1_DIVISOR != 8){
 		AVERAGE1_DIVISOR++;
 	}
+	RECENTRR[0] = RR;
 }
 
+// Calculating average RR-interval
 void calculateAverage(){
 	RR_AVERAGE1 = 0;
 	RR_AVERAGE2 = 0;
@@ -433,9 +448,9 @@ void calculateAverage(){
 
 }
 
+// Calculations from the searchback.
 void searchBack( int peak2){
 	moveRecentRR();
-	*(RECENTRR) = RR;
 
 	SPKF = (peak2 / 4) + (SPKF * 3 / 4);
 
@@ -453,12 +468,11 @@ void searchBack( int peak2){
 	THRESHOLD2 = THRESHOLD1 / 2;
 
 }
-
+ // Writing the rpeaks data into the console.
 void dataOutput(int peak, int RR, int place){
 	float time = place / 250.0;
 	float pulse = 15000.0 / RR;
 
-	/*
 	if(peak < 2000){
 		printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes.\n"
 					"Warning: Beat to low!\n\n", peak, time, pulse);
@@ -466,6 +480,6 @@ void dataOutput(int peak, int RR, int place){
 		printf("R-Peak detected: %i, at time: %1.2f seconds.\nThe patients pulse: %1.2f beats per minutes.\n"
 					"\n", peak, time,pulse);
 	}
-*/
+
 
 }
