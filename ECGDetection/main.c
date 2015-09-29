@@ -1,6 +1,10 @@
 #include<stdio.h>
 #include"sensor.h"
 #include<time.h>
+/* ECG-scanning
+ * Mathias Linde s144468
+ * Anders H
+ */
 
 /* The lines of code that was used
  * to analize runtime has been commented out.
